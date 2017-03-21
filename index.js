@@ -69,28 +69,33 @@ function getPageBodies(links, originalUrl, callback) {
 function getMostSimilarLink(pageBodiesAndLinks, callback) {
   corpus = tm.Corpus([]);
   pageBodiesAndLinks = pageBodiesAndLinks.filter(val => val);
-  docs = pageBodiesAndLinks.map((bodyAndLink) => tm.utils.expandContractions(bodyAndLink.pageHtml));
-  corpus.addDocs(docs);
-  corpus.trim().toLower().clean().removeInterpunctuation().removeNewlines().removeInvalidCharacters().removeWords(tm.STOPWORDS.EN).stem("Lancaster");
-  corpus.map((doc) => doc.replace(/[^\w\s]|_/g, "").replace(/\s+/g, " "));
-  terms = tm.Terms(corpus);
-  //tm.weightTfIdf(terms.dtm);
-  terms.fill_zeros();
-  matrix = terms.dtm;
 
-  original_site = matrix[matrix.length - 1].map(Math.abs);
-  max_similarity = 0.0;
-  max_similarity_index = 0;
-  for (j = 0; j<matrix.length -1; j++) {
-    currentDocRow = matrix[j].map(Math.abs);
-    similarity = cossim(original_site, currentDocRow);
-    if (similarity > max_similarity) {
-      max_similarity = similarity;
-      max_similarity_index = j;
-    }  
+  if (pageBodiesAndLinks.length > 0) {
+    docs = pageBodiesAndLinks.map((bodyAndLink) => tm.utils.expandContractions(bodyAndLink.pageHtml));
+    corpus.addDocs(docs);
+    corpus.trim().toLower().clean().removeInterpunctuation().removeNewlines().removeInvalidCharacters().removeWords(tm.STOPWORDS.EN).stem("Lancaster");
+    corpus.map((doc) => doc.replace(/[^\w\s]|_/g, "").replace(/\s+/g, " "));
+    terms = tm.Terms(corpus);
+    //tm.weightTfIdf(terms.dtm);
+    terms.fill_zeros();
+    matrix = terms.dtm;
+    
+    original_site = matrix[matrix.length - 1].map(Math.abs);
+    max_similarity = 0.0;
+    max_similarity_index = 0;
+    for (j = 0; j<matrix.length -1; j++) {
+      currentDocRow = matrix[j].map(Math.abs);
+      similarity = cossim(original_site, currentDocRow);
+      if (similarity > max_similarity) {
+        max_similarity = similarity;
+        max_similarity_index = j;
+      }  
+    }
+    
+    callback(null, pageBodiesAndLinks[max_similarity_index].url, max_similarity);
+  } else {
+    callback(null, '', 0.0);
   }
-  
-  callback(null, pageBodiesAndLinks[max_similarity_index].url, max_similarity);
 }
 
 //pipeline execution
