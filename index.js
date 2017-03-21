@@ -10,7 +10,7 @@ function getRequestForPage(url) {
 }
 
 function requestWithBodyTextAndUrlCallback(url, callback) {
-  request(url, function(error, response, body) {
+  request({uri: url, maxRedirects: 3}, function(error, response, body) {
     if (error) {
       callback(error);
     } else {
@@ -38,7 +38,7 @@ function cossim(x, y) {
       throw "invalid array values";
     }
   }
-
+  
   return dot_product / (Math.sqrt(mag_x) * Math.sqrt(mag_y));
 }
 
@@ -68,30 +68,33 @@ function getPageBodies(links, originalUrl, callback) {
 
 function getMostSimilarLink(pageBodiesAndLinks, callback) {
   corpus = tm.Corpus([]);
+  pageBodiesAndLinks = pageBodiesAndLinks.filter(val => val);
   docs = pageBodiesAndLinks.map((bodyAndLink) => tm.utils.expandContractions(bodyAndLink.pageHtml));
   corpus.addDocs(docs);
-  corpus.trim().toLower().clean().removeInterpunctuation().removeNewlines().removeWords(tm.STOPWORDS.EN);
+  corpus.trim().toLower().clean().removeInterpunctuation().removeNewlines().removeInvalidCharacters().removeWords(tm.STOPWORDS.EN).stem("Lancaster");
+  corpus.map((doc) => doc.replace(/[^\w\s]|_/g, "").replace(/\s+/g, " "));
   terms = tm.Terms(corpus);
-  tm.weightTfIdf(terms.dtm);
+  //tm.weightTfIdf(terms.dtm);
   terms.fill_zeros();
   matrix = terms.dtm;
 
-  original_site = matrix[matrix.length - 1];
+  original_site = matrix[matrix.length - 1].map(Math.abs);
   max_similarity = 0.0;
   max_similarity_index = 0;
   for (j = 0; j<matrix.length -1; j++) {
-    similarity = cossim(original_site, matrix[j]);
+    currentDocRow = matrix[j].map(Math.abs);
+    similarity = cossim(original_site, currentDocRow);
     if (similarity > max_similarity) {
       max_similarity = similarity;
       max_similarity_index = j;
     }  
   }
-
+  
   callback(null, pageBodiesAndLinks[max_similarity_index].url, max_similarity);
 }
 
 //pipeline execution
-function findSourceReporting(url, similarityThreshold, maxPathDistance, callback) {
+function findSource(url, similarityThreshold, maxPathDistance, callback) {
   async.waterfall([
       getRequestForPage(url),
       extractLinks,
@@ -99,8 +102,12 @@ function findSourceReporting(url, similarityThreshold, maxPathDistance, callback
       getPageBodies,
       getMostSimilarLink
   ], function(err, mostSimilarLink, similarity) {
+    console.log(mostSimilarLink);
+    console.log(similarity);
+    console.log("\n");
+    debugger;
     if (similarity > similarityThreshold && maxPathDistance > 0) {
-      findSourceReporting(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback)
+      findSource(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback)
     } else if (similarity < similarityThreshold) {
       callback(url);
     } else {
@@ -109,5 +116,6 @@ function findSourceReporting(url, similarityThreshold, maxPathDistance, callback
   });
 }
 
-findSourceReporting('http://www.breitbart.com/big-government/2017/03/16/donald-trump-budget-spends-big-on-military-and-the-wall-cuts-foreign-aid-epa-and-public-broadcasting/', 0.1, 1, function(link) {console.log(link);});
-
+module.exports = {
+  findSourceReporting: findSource,  
+};
