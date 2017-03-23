@@ -14,5 +14,9 @@
     "text-miner": "^1.0.5",
     "unfluff": "^1.1.0",
     "url": "^0.11.0"
+  },
+  "devDependencies": {
+    "jasmine": "^2.5.3",
+    "rewire": "^2.5.2"
   }
 }
