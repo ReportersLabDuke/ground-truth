@@ -15,3 +15,57 @@ describe("The getRequestForPage function", function () {
     )});
   });
 });
+
+describe("The cossim function", function() {
+  var testFunction = gt.__get__("cossim");
+
+  it("should return a similarity of 1 for vectors that are the same", function () { 
+    var vec1 = [1, 1, 1];
+    var vec2 = [1, 1, 1];
+    var result1 = testFunction(vec1, vec2);
+
+    expect(result1).toBeCloseTo(1.00, 2);
+
+    var vec3 = [1, 5, 6, 7, 9];
+    var vec4 = [1, 5, 6, 7, 9];
+    var result2 = testFunction(vec3, vec4);
+
+    expect(result2).toBeCloseTo(1.00, 2);
+  });
+
+  it("should return a similarity of 0 for orthogonal vectors", function () {
+    var vec1 = [0, 0, 1];
+    var vec2 = [1, 0, 0];
+    var result1 = testFunction(vec1, vec2);
+
+    expect(result1).toBeCloseTo(0.00, 2);
+
+    var vec3 = [1, 0 ,0, 1];
+    var vec4 = [0, 1, 0, 0];
+    var result2 = testFunction(vec3, vec4);
+
+    expect(result2).toBeCloseTo(0.00, 2);
+  });
+
+  it("should return a similarity of -1 for opposite vectors", function () {
+    var vec1 = [-1, -3, -1, -5, -2, -9];
+    var vec2 = [1, 3, 1, 5, 2, 9];
+    var result1 = testFunction(vec1, vec2);
+
+    expect(result1).toBeCloseTo(-1.00, 2);    
+  });
+
+  it("should return correct similarities for test vectors", function () {
+    var vec1 = [9, 4, 2, 49, 19, 1, 4, 12];
+    var vec2 = [4, 3, 40, 10, 4, 1, 4, 2];
+    var result1 = testFunction(vec1, vec2);
+    
+    expect(result1).toBeCloseTo(0.3184, 3);
+
+    var vec3 = [2, -1, 4, -10, 5];
+    var vec4 = [-1, 3, 2, -3, 4];
+    var result2 = testFunction(vec3, vec4);
+
+    expect(result2).toBeCloseTo(0.7024, 3); 
+  });
+});
