@@ -16,6 +16,51 @@ describe("The getRequestForPage function", function () {
   });
 });
 
+describe("The requestWithBodyTextAndUrlCallback function", function () {
+  var testFunction = gt.__get__("requestWithBodyTextAndUrlCallback");
+  var testUrl = "http://csb.stanford.edu/class/public/pages/sykes_webdesign/05_simple.html";
+  var libs = {};
+  var cb = null;
+  
+  beforeAll(function (done) {
+    libs['request'] = gt.__get__("request");
+    
+    spyOn(libs.request, 'get').and.callThrough();
+    gt.__set__("unfluff", jasmine.createSpy().and.callFake(function (page) {
+      return {
+        text: "unfluff stand-in text"
+      };
+    }));
+
+    cb = jasmine.createSpy('callback');
+    testFunction(testUrl, cb);
+
+    setTimeout(function() {
+      done();
+    }, 1000);
+  });
+
+  it("should have called request with the right parameters", function (){
+    expect(libs.request.get).toHaveBeenCalledWith({
+      uri: testUrl,
+      maxRedirects: 3,
+      jar: true,
+      headers: {"User-Agent": "Chrome/26.0.1410."}
+    }, jasmine.any(Function));
+  });
+
+  it("should have called unfluff", function () {  
+    expect(gt.__get__("unfluff")).toHaveBeenCalled();
+  });
+
+  it("should have called the callback correctly", function () {
+    expect(cb).toHaveBeenCalledWith(null, jasmine.objectContaining({
+      pageHtml: "unfluff stand-in text",
+      url: testUrl
+    }));
+  }); 
+});
+
 describe("The cossim function", function() {
   var testFunction = gt.__get__("cossim");
 

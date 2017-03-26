@@ -20,7 +20,7 @@ function getRequestForPage(url) {
   * @param {function} callback - a callback which is passed an object containing the unfluffed body text and the request url 
   */
 function requestWithBodyTextAndUrlCallback(url, callback) {
-  request({uri: url, maxRedirects: 3, jar: true, headers: { "User-Agent": "Chrome/26.0.1410."}}, function(error, response, body) {
+  request.get({uri: url, maxRedirects: 3, jar: true, headers: { "User-Agent": "Chrome/26.0.1410."}}, function(error, response, body) {
     if (error) {
       callback(error);
     } else {
