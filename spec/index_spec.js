@@ -114,3 +114,20 @@ describe("The cossim function", function() {
     expect(result2).toBeCloseTo(0.7024, 3); 
   });
 });
+
+describe("The filterDomain function", function () {
+  it("should filter links from the specified domain", function () {
+      var testFunction = gt.__get__("filterDomain");
+      var testUrl = "http://www.google.com";
+      var filterUrls = [
+        {href: "http://www.google.com/search"},
+        {href: "http://www.bing.com/search"},
+        {href: "https://www.google.com"},
+      ];
+        
+      var cb = jasmine.createSpy("callback");
+      
+      testFunction(filterUrls, testUrl, cb);
+      expect(cb).toHaveBeenCalledWith(null, [{href: "http://www.bing.com/search"}], testUrl);
+  }); 
+});
