@@ -1,4 +1,5 @@
 var rewire = require('rewire');
+var nock = require('nock');
 
 var gt = rewire('../index.js');
 
@@ -21,11 +22,13 @@ describe("The requestWithBodyTextAndUrlCallback function", function () {
   var testUrl = "http://csb.stanford.edu/class/public/pages/sykes_webdesign/05_simple.html";
   var libs = {};
   var cb = null;
+  var originalUnfluff = null;
   
   beforeAll(function (done) {
     libs['request'] = gt.__get__("request");
     
     spyOn(libs.request, 'get').and.callThrough();
+    originalUnfluff = gt.__get__("unfluff");
     gt.__set__("unfluff", jasmine.createSpy().and.callFake(function (page) {
       return {
         text: "unfluff stand-in text"
@@ -38,6 +41,10 @@ describe("The requestWithBodyTextAndUrlCallback function", function () {
     setTimeout(function() {
       done();
     }, 1000);
+  });
+
+  afterAll(function () {
+    gt.__set__("unfluff", originalUnfluff);
   });
 
   it("should have called request with the right parameters", function (){
@@ -130,4 +137,57 @@ describe("The filterDomain function", function () {
       testFunction(filterUrls, testUrl, cb);
       expect(cb).toHaveBeenCalledWith(null, [{href: "http://www.bing.com/search"}], testUrl);
   }); 
+});
+
+describe("The getPageBodies function", function () {
+  var cb = null;
+  var testLinkObjs = [];
+  var testOriginalUrl = "";
+  var originalUnfluff = null;
+  
+  beforeEach(function (done) {
+    originalUnfluff = gt.__get__("unfluff");
+    gt.__set__("unfluff", jasmine.createSpy().and.callFake(function (page) {
+      return {
+        text: page
+      };
+    }));
+
+    var testServer = nock("http://www.test.com")
+      .get("/test1.html")
+      .reply(200, "first test page")
+      .get("/test2.html")
+      .reply(200, "second test page");
+
+    var exampleServer = nock("http://www.example.com")
+      .get("/")
+      .reply(200, "example page");
+
+    var testFunction = gt.__get__("getPageBodies");
+    testOriginalUrl = "http://www.example.com/";
+    testLinkObjs = [
+      {href: "http://www.test.com/test1.html"},
+      {href: "http://www.test.com/test2.html"}
+    ];
+
+    cb = jasmine.createSpy('callback');
+
+    testFunction(testLinkObjs, testOriginalUrl, cb);
+
+    setTimeout(() => {done();}, 1000);
+  });
+
+  afterEach(function () {
+    nock.restore();
+    gt.__set__("unfluff", originalUnfluff);
+  });
+  
+  it("should get pages from input urls", function () { 
+    expect(cb).toHaveBeenCalledWith(null, [
+      {pageHtml: "first test page", url: testLinkObjs[0].href},
+      {pageHtml: "second test page", url: testLinkObjs[1].href},
+      {pageHtml: "example page", url: testOriginalUrl}
+      ]
+    );
+  });
 });
