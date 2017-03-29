@@ -191,3 +191,25 @@ describe("The getPageBodies function", function () {
     );
   });
 });
+
+describe("The getMostSimilarLink function", function () {
+  var testFunction = gt.__get__("getMostSimilarLink");
+  var testPageObjects = [];
+
+  beforeEach(function () {
+    testPageObjects = [
+      {url: "http://www.test.com/test1.html", pageHtml: "first test example"},
+      {url: "http://www.test.com/test2.html", pageHtml: "second test page"},
+      {url: "http://www.example.com/example1.html", pageHtml: "first example page"},
+      {url: "http://www.example.com/example2.html", pageHtml: "first test example"}
+    ];
+
+    cb = jasmine.createSpy('callback');
+
+    testFunction(testPageObjects, cb);
+  });
+
+  it("should call the callback with the correct result", function() {
+    expect(cb).toHaveBeenCalledWith(null, "http://www.test.com/test1.html", jasmine.any(Number));
+  });
+});
