@@ -1,6 +1,6 @@
 {
   "name": "ground-truth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Finds the source of original reporting behind a news story",
   "main": "index.js",
   "scripts": {
@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "async": "^2.1.5",
+    "browser-request": "^0.3.3",
     "request": "^2.81.0",
     "text-miner": "^1.0.5",
     "unfluff": "^1.1.0",

@@ -1,5 +1,9 @@
 var async = require('async');
-var request = require('request');
+if (typeof window !== 'undefined') {
+  var request = require('browser-request');
+} else {
+  var request = require('request');
+}
 var unfluff = require('unfluff');
 var tm = require('text-miner');
 var urlParser = require('url');
