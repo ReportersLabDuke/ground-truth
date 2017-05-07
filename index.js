@@ -4,7 +4,7 @@ if (typeof window !== 'undefined') {
 } else {
   var request = require('request');
 }
-var unfluff = require('unfluff');
+var unfluff = require('@knod/unfluff');
 var tm = require('text-miner');
 var urlParser = require('url');
 
@@ -24,11 +24,21 @@ function getRequestForPage(url) {
   * @param {function} callback - a callback which is passed an object containing the unfluffed body text and the request url 
   */
 function requestWithBodyTextAndUrlCallback(url, callback) {
-  request.get({uri: url, maxRedirects: 3, jar: true, headers: { "User-Agent": "Chrome/26.0.1410."}}, function(error, response, body) {
+  if (typeof window === 'undefined') {
+    var opts = {uri: url, maxRedirects: 3, jar: true, headers: { "User-Agent": "Chrome/26.0.1410."}};
+  } else {
+    var opts = {uri: url, jar: true, headers: { "User-Agent": "Chrome/26.0.1410."}};
+  }
+
+  request.get(opts, function(error, response, body) {
     if (error) {
       callback(error);
     } else {
-      callback(null, {pageHtml: unfluff(body).text, url: response.request.uri.href})
+      if (typeof window === 'undefined') {
+        callback(null, {pageHtml: unfluff(body).text, url: response.request.uri.href});
+      } else {
+        callback(null, {pageHtml: unfluff(body).text, url: response.responseURL});
+      }
     }
   });
 }
@@ -71,7 +81,11 @@ function cossim(x, y) {
   */
 function extractLinks(response, body, callback) {
   data = unfluff(body);
-  callback(null, data.links, response.request.uri.href);
+  if (typeof window === 'undefined') {
+    callback(null, data.links, response.request.uri.href);
+  } else {
+    callback(null, data.links, response.responseURL);
+  }
 }
 
 /** Removes links from a list that are in the same domain as originalUrl and passes the filtered list to a callback
