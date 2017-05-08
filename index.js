@@ -27,7 +27,7 @@ function requestWithBodyTextAndUrlCallback(url, callback) {
   if (typeof window === 'undefined') {
     var opts = {uri: url, maxRedirects: 3, jar: true, headers: { "User-Agent": "Chrome/26.0.1410."}};
   } else {
-    var opts = {uri: url, jar: true, headers: { "User-Agent": "Chrome/26.0.1410."}};
+    var opts = {uri: url, jar: true};
   }
 
   request.get(opts, function(error, response, body) {
@@ -159,11 +159,12 @@ function getMostSimilarLink(pageBodiesAndLinks, callback) {
 /** Externally accessible method that attempts to find the "source reporting" behind an input url
   *
   * @param {string} url - the url of the page to trace source reporting for
-  * @param {number} similarityThreshold - the similarity score that each page in the source reporting chain must have to the next
+  * @param {number} similarityThreshold - the similarity score that each page in the source reporting chain must have to the next 
   * @param {number} maxPathDistance - the max number of hops to search across for source reporting
-  * @param {function} callback - a callback which is passed a link to the source reporting behind the input url
+  * @param {function} callback - a callback which is passed an object containing the source reporting behind the input url and a similarity score
+  * @param {Object[]} path - an array of result objects from higher calls to this function
   */
-function findSource(url, similarityThreshold, maxPathDistance, callback) {
+function findSource(url, similarityThreshold, maxPathDistance, callback, path=[]) {
   async.waterfall([
       getRequestForPage(url),
       extractLinks,
@@ -174,13 +175,12 @@ function findSource(url, similarityThreshold, maxPathDistance, callback) {
     console.log(mostSimilarLink);
     console.log(similarity);
     console.log("\n");
-    debugger;
     if (similarity > similarityThreshold && maxPathDistance > 0) {
-      findSource(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback)
+      findSource(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback, path.concat({source: mostSimilarLink, score: similarity}))
     } else if (similarity < similarityThreshold) {
-      callback(url);
+      callback({source: url, score: similarity}, path);
     } else {
-      callback(mostSimilarLink);
+      callback({source: mostSimilarLink, score: similarity}, path);
     }
   });
 }
