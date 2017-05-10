@@ -1,6 +1,6 @@
 {
   "name": "ground-truth",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Finds the source of original reporting behind a news story",
   "main": "index.js",
   "scripts": {

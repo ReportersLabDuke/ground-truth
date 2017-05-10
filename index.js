@@ -98,7 +98,14 @@ function filterDomain(links, originalUrl, callback) {
   originalUrlObject = urlParser.parse(originalUrl);
   outgoingLinks = links.filter(function(value) {
     newUrlObject = urlParser.parse(value.href);
-    return originalUrlObject.hostname != newUrlObject.hostname;
+    if (!originalUrlObject.hostname || !newUrlObject.hostname) {
+      return false;
+    } 
+    if (originalUrlObject.hostname.includes(newUrlObject.hostname) || newUrlObject.hostname.includes(originalUrlObject.hostname)) {
+      return false;
+    } else {
+      return true;
+    }
   });
 
   callback(null, outgoingLinks, originalUrl); 
