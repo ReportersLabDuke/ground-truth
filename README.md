@@ -24,7 +24,7 @@ ground-truth goes through all the links on a page and checks how similar the con
 
 Similarity is computed by vectorizing the text on a page using a count-vector and then comparing count-vectors
 
-##License and copyright
+## License and copyright
 
 Copyright Duke Reporters' Lab
 
