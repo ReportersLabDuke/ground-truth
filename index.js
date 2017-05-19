@@ -132,6 +132,7 @@ function getPageBodies(links, originalUrl, callback) {
   */
 function getMostSimilarLink(pageBodiesAndLinks, callback) {
   corpus = tm.Corpus([]);
+  similarities = [];
   pageBodiesAndLinks = pageBodiesAndLinks.filter(val => val);
 
   if (pageBodiesAndLinks.length > 0) {
@@ -150,15 +151,17 @@ function getMostSimilarLink(pageBodiesAndLinks, callback) {
     for (j = 0; j<matrix.length -1; j++) {
       currentDocRow = matrix[j].map(Math.abs);
       similarity = cossim(original_site, currentDocRow);
+      similarities.push({url: pageBodiesAndLinks[j].url, score: similarity});
       if (similarity > max_similarity) {
         max_similarity = similarity;
         max_similarity_index = j;
       }  
     }
     
-    callback(null, pageBodiesAndLinks[max_similarity_index].url, max_similarity);
+    console.log(similarities);
+    callback(null, pageBodiesAndLinks[max_similarity_index].url, max_similarity, similarities.sort((a, b) => b.score-a.score));
   } else {
-    callback(null, '', 0.0);
+    callback(null, '', 0.0, similarities);
   }
 }
 
@@ -178,12 +181,12 @@ function findSource(url, similarityThreshold, maxPathDistance, callback, path=[]
       filterDomain,
       getPageBodies,
       getMostSimilarLink
-  ], function(err, mostSimilarLink, similarity) {
+  ], function(err, mostSimilarLink, similarity, similarities) {
     console.log(mostSimilarLink);
     console.log(similarity);
     console.log("\n");
     if (similarity > similarityThreshold && maxPathDistance > 0) {
-      findSource(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback, path.concat({source: mostSimilarLink, score: similarity}))
+      findSource(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback, path.concat(similarities))
     } else if (similarity < similarityThreshold) {
       callback({source: url, score: similarity}, path);
     } else {
