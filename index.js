@@ -186,7 +186,8 @@ function findSource(url, similarityThreshold, maxPathDistance, callback, path=[]
     console.log(similarity);
     console.log("\n");
     if (similarity > similarityThreshold && maxPathDistance > 0) {
-      findSource(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback, path.concat(similarities))
+      path.push(similarities);
+      findSource(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback, path)
     } else if (similarity < similarityThreshold) {
       callback({source: url, score: similarity}, path);
     } else {
