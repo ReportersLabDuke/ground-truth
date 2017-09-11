@@ -15,7 +15,12 @@ var urlParser = require('url');
   * @return {function} - a request function bound to the input url
   */
 function getRequestForPage(url) {
-  return request.bind(null, url);  
+  if (typeof window === 'undefined') {
+    var opts = { uri: url, maxRedirects: 3, jar: true, headers: { "User-Agent": "Chrome/26.0.1410." } };
+  } else {
+    var opts = { uri: url, jar: true };
+  }
+  return request.get.bind(null, opts);  
 }
 
 /** A request function that unfluffs the body of the response
