@@ -8,7 +8,10 @@ function getLinks(html) {
   Object.values(link_objs).forEach(function (currentValue) {
     if (typeof currentValue === 'object' && 'attribs' in currentValue) {
       link_url = currentValue['attribs']['href'];
-      link_urls.push(link_url);
+      text_children = currentValue['children'].filter((child) => {
+        return child['type'] === 'text';
+      });
+      link_urls.push({ "href": link_url, "text": (text_children.length > 0 ? text_children[0]['data'] : "") });
     }
   });
 

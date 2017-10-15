@@ -4,9 +4,19 @@ if (typeof window !== 'undefined') {
 } else {
   var request = require('request');
 }
-var unfluff = require('@knod/unfluff');
 var tm = require('text-miner');
 var urlParser = require('url');
+
+var standard_unfluff = require('@knod/unfluff');
+var times_unfluff = require('./times_unfluff');
+var post_unfluff = require('./post_unfluff');
+var unfluff = standard_unfluff;
+
+var unfluffers = [
+  { "matchPattern": "nytimes\.com", "unfluffer": times_unfluff },
+  { "matchPattern": "washingtonpost\.com", "unfluffer": post_unfluff },
+  { "matchPattern": "$a", "unfluffer": standard_unfluff }
+]
 
 //request helpers
 /** Creates a method to call the request function on a given url
@@ -30,12 +40,12 @@ function getRequestForPage(url) {
   */
 function requestWithBodyTextAndUrlCallback(url, callback) {
   if (typeof window === 'undefined') {
-    var opts = {uri: url, maxRedirects: 3, jar: true, headers: { "User-Agent": "Chrome/26.0.1410."}};
+    var opts = { uri: url, maxRedirects: 3, jar: true, headers: { "User-Agent": "Chrome/26.0.1410." }, rejectUnauthorized: false};
   } else {
-    var opts = {uri: url, jar: true};
+    var opts = { uri: url, jar: true, rejectUnauthorized: false};
   }
 
-  request.get(opts, function(error, response, body) {
+  request.get(opts, function (error, response, body) {
     if (error) {
       callback(error);
     } else {
@@ -100,19 +110,24 @@ function extractLinks(response, body, callback) {
   * @param {function} callback - a callback which takes a filtered list of links and the reference url
   */
 function filterDomain(links, originalUrl, callback) {
+  console.log("filter domain");
+  console.log(links);
   originalUrlObject = urlParser.parse(originalUrl);
-  outgoingLinks = links.filter(function(value) {
+  outgoingLinks = links.filter(function (value) {
     newUrlObject = urlParser.parse(value.href);
     if (!originalUrlObject.hostname || !newUrlObject.hostname) {
       return false;
-    } 
-    if (originalUrlObject.hostname.includes(newUrlObject.hostname) || newUrlObject.hostname.includes(originalUrlObject.hostname)) {
+    }
+    trimmedOriginalHostname = originalUrlObject.hostname.replace("www.", "");
+    trimmedNewHostname = newUrlObject.hostname.replace("www.", "");
+    if (trimmedOriginalHostname.includes(trimmedNewHostname) || trimmedNewHostname.includes(trimmedOriginalHostname)) {
       return false;
     } else {
       return true;
     }
   });
-
+  console.log("outgoingLinks: " + outgoingLinks);
+  console.log("originalUrl: " + originalUrl);
   callback(null, outgoingLinks, originalUrl); 
 }
 
@@ -125,7 +140,7 @@ function filterDomain(links, originalUrl, callback) {
 function getPageBodies(links, originalUrl, callback) {
   urls = links.map((linkObj) => linkObj.href);
   urls.push(originalUrl);
-  async.map(urls, requestWithBodyTextAndUrlCallback, function(error, results) {
+  async.map(urls, requestWithBodyTextAndUrlCallback, function (error, results) {
     callback(null, results);
   });
 }
@@ -156,18 +171,37 @@ function getMostSimilarLink(pageBodiesAndLinks, callback) {
     for (j = 0; j<matrix.length -1; j++) {
       currentDocRow = matrix[j].map(Math.abs);
       similarity = cossim(original_site, currentDocRow);
-      similarities.push({url: pageBodiesAndLinks[j].url, score: similarity});
+      similarities.push({ url: pageBodiesAndLinks[j].url, score: similarity });
       if (similarity > max_similarity) {
         max_similarity = similarity;
         max_similarity_index = j;
       }  
     }
     
-    console.log(similarities);
     callback(null, pageBodiesAndLinks[max_similarity_index].url, max_similarity, similarities.sort((a, b) => b.score-a.score));
   } else {
     callback(null, '', 0.0, similarities);
   }
+}
+
+/** Matches the input url to a regex and sets the unfluffer accordingly
+  *
+  * @param {string} url - the url of the page that will be unfluffed
+  * @param {Object[]} unfluffers - list of mappings of regex matchers to unfluff objects
+  */
+function chooseUnfluffer(url, unfluffers) {
+  defaultUnfluffer = unfluffers[unfluffers.length - 1].unfluffer;
+
+  for (unflufferMatcher of unfluffers) {
+    console.log(unflufferMatcher.matchPattern);
+    matches = url.match(unflufferMatcher.matchPattern);
+    if (matches !== null) {
+      return unflufferMatcher.unfluffer;
+    }
+  }
+
+  console.log("returning default");
+  return defaultUnfluffer;
 }
 
 //pipeline execution
@@ -179,7 +213,8 @@ function getMostSimilarLink(pageBodiesAndLinks, callback) {
   * @param {function} callback - a callback which is passed an object containing the source reporting behind the input url and a similarity score
   * @param {Object[]} path - an array of result objects from higher calls to this function
   */
-function findSource(url, similarityThreshold, maxPathDistance, callback, path=[]) {
+function findSource(url, similarityThreshold, maxPathDistance, callback, path = []) {
+  unfluff = chooseUnfluffer(url, unfluffers);
   async.waterfall([
       getRequestForPage(url),
       extractLinks,
@@ -187,8 +222,7 @@ function findSource(url, similarityThreshold, maxPathDistance, callback, path=[]
       getPageBodies,
       getMostSimilarLink
   ], function(err, mostSimilarLink, similarity, similarities) {
-    console.log(mostSimilarLink);
-    console.log(similarity);
+    console.log("most similar link: " + mostSimilarLink);
     console.log("\n");
     if (similarity > similarityThreshold && maxPathDistance > 0) {
       path.push(similarities);
