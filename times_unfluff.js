@@ -11,6 +11,7 @@ function getLinks(html) {
       text_children = currentValue['children'].filter((child) => {
         return child['type'] === 'text';
       });
+      //index.js are expecting link object in this format
       link_urls.push({ "href": link_url, "text": (text_children.length > 0 ? text_children[0]['data'] : "") });
     }
   });

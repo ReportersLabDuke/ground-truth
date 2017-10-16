@@ -49,6 +49,8 @@ function requestWithBodyTextAndUrlCallback(url, callback) {
     if (error) {
       callback(error);
     } else {
+      //need to choose unfluffer based on link type
+      unfluff = chooseUnfluffer(response.request.uri.href, unfluffers);
       if (typeof window === 'undefined') {
         callback(null, {pageHtml: unfluff(body).text, url: response.request.uri.href});
       } else {
@@ -111,7 +113,6 @@ function extractLinks(response, body, callback) {
   */
 function filterDomain(links, originalUrl, callback) {
   console.log("filter domain");
-  console.log(links);
   originalUrlObject = urlParser.parse(originalUrl);
   outgoingLinks = links.filter(function (value) {
     newUrlObject = urlParser.parse(value.href);
@@ -171,6 +172,8 @@ function getMostSimilarLink(pageBodiesAndLinks, callback) {
     for (j = 0; j<matrix.length -1; j++) {
       currentDocRow = matrix[j].map(Math.abs);
       similarity = cossim(original_site, currentDocRow);
+      console.log(pageBodiesAndLinks[j].url);
+      console.log(similarity);
       similarities.push({ url: pageBodiesAndLinks[j].url, score: similarity });
       if (similarity > max_similarity) {
         max_similarity = similarity;
@@ -214,7 +217,7 @@ function chooseUnfluffer(url, unfluffers) {
   * @param {Object[]} path - an array of result objects from higher calls to this function
   */
 function findSource(url, similarityThreshold, maxPathDistance, callback, path = []) {
-  unfluff = chooseUnfluffer(url, unfluffers);
+  //unfluff = chooseUnfluffer(url, unfluffers);
   async.waterfall([
       getRequestForPage(url),
       extractLinks,
