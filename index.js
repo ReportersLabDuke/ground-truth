@@ -49,13 +49,14 @@ function requestWithBodyTextAndUrlCallback(url, callback) {
     if (error) {
       callback(error);
     } else {
-      //need to choose unfluffer based on link type
-      unfluff = chooseUnfluffer(response.request.uri.href, unfluffers);
       if (typeof window === 'undefined') {
-        callback(null, {pageHtml: unfluff(body).text, url: response.request.uri.href});
+        var requestUrl = response.request.uri.href;
       } else {
-        callback(null, {pageHtml: unfluff(body).text, url: response.responseURL});
+        var requestUrl = response.responseURL;
       }
+      //need to choose unfluffer based on link type
+      unfluff = chooseUnfluffer(requestUrl, unfluffers);
+      callback(null, { pageHtml: unfluff(body).text, url: requestUrl });
     }
   });
 }
@@ -112,7 +113,6 @@ function extractLinks(response, body, callback) {
   * @param {function} callback - a callback which takes a filtered list of links and the reference url
   */
 function filterDomain(links, originalUrl, callback) {
-  console.log("filter domain");
   originalUrlObject = urlParser.parse(originalUrl);
   outgoingLinks = links.filter(function (value) {
     newUrlObject = urlParser.parse(value.href);
@@ -127,7 +127,6 @@ function filterDomain(links, originalUrl, callback) {
       return true;
     }
   });
-  console.log("outgoingLinks: " + outgoingLinks);
   console.log("originalUrl: " + originalUrl);
   callback(null, outgoingLinks, originalUrl); 
 }
@@ -172,8 +171,8 @@ function getMostSimilarLink(pageBodiesAndLinks, callback) {
     for (j = 0; j<matrix.length -1; j++) {
       currentDocRow = matrix[j].map(Math.abs);
       similarity = cossim(original_site, currentDocRow);
-      console.log(pageBodiesAndLinks[j].url);
-      console.log(similarity);
+      console.log("outgoing link: " + pageBodiesAndLinks[j].url);
+      console.log("similarity: " + similarity);
       similarities.push({ url: pageBodiesAndLinks[j].url, score: similarity });
       if (similarity > max_similarity) {
         max_similarity = similarity;
@@ -196,14 +195,12 @@ function chooseUnfluffer(url, unfluffers) {
   defaultUnfluffer = unfluffers[unfluffers.length - 1].unfluffer;
 
   for (unflufferMatcher of unfluffers) {
-    console.log(unflufferMatcher.matchPattern);
     matches = url.match(unflufferMatcher.matchPattern);
     if (matches !== null) {
       return unflufferMatcher.unfluffer;
     }
   }
 
-  console.log("returning default");
   return defaultUnfluffer;
 }
 
@@ -217,7 +214,6 @@ function chooseUnfluffer(url, unfluffers) {
   * @param {Object[]} path - an array of result objects from higher calls to this function
   */
 function findSource(url, similarityThreshold, maxPathDistance, callback, path = []) {
-  //unfluff = chooseUnfluffer(url, unfluffers);
   async.waterfall([
       getRequestForPage(url),
       extractLinks,
@@ -226,13 +222,16 @@ function findSource(url, similarityThreshold, maxPathDistance, callback, path = 
       getMostSimilarLink
   ], function(err, mostSimilarLink, similarity, similarities) {
     console.log("most similar link: " + mostSimilarLink);
-    console.log("\n");
+    console.log("highest similarity: " + similarity);
+    console.log("*************************************");
     if (similarity > similarityThreshold && maxPathDistance > 0) {
       path.push(similarities);
       findSource(mostSimilarLink, similarityThreshold, maxPathDistance - 1, callback, path)
     } else if (similarity < similarityThreshold) {
+      console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
       callback({source: url, score: similarity}, path);
     } else {
+      console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
       callback({source: mostSimilarLink, score: similarity}, path);
     }
   });
