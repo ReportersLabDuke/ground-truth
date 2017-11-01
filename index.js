@@ -90,6 +90,18 @@ function cossim(x, y) {
   return dot_product / (Math.sqrt(mag_x) * Math.sqrt(mag_y));
 }
 
+/** Checks if two hostnames have the same second-level domain
+ *
+ * @param {string} hostnameA - the first url to be compared
+ * @param {string} hostnameB - the second url to be compared
+ */
+function checkSameDomain(hostnameA, hostnameB) {
+  var domainsA = hostnameA.split('.').reverse();
+  var domainsB = hostnameB.split('.').reverse();
+
+  return (domainsA[0] == domainsB[0] && domainsA[1] == domainsB[1]);
+}
+
 //pipeline functions
 /** Request callback which gets links from page HTML and passes them to a callback
   *
@@ -121,11 +133,7 @@ function filterDomain(links, originalUrl, callback) {
     }
     trimmedOriginalHostname = originalUrlObject.hostname.replace("www.", "");
     trimmedNewHostname = newUrlObject.hostname.replace("www.", "");
-    if (trimmedOriginalHostname.includes(trimmedNewHostname) || trimmedNewHostname.includes(trimmedOriginalHostname)) {
-      return false;
-    } else {
-      return true;
-    }
+    return !checkSameDomain(trimmedOriginalHostname, trimmedNewHostname);
   });
   console.log("originalUrl: " + originalUrl);
   callback(null, outgoingLinks, originalUrl); 
