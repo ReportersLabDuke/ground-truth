@@ -11,3 +11,4 @@ gt.findSourceReporting('http://www.dukechronicle.com/article/2017/01/report-duke
 
 //gt.findSourceReporting('https://www.nytimes.com/2015/03/04/sports/ncaabasketball/duke-reacts-to-report-on-handling-of-sexual-assault-allegations.html', 0.5, 15, function (results, path) { console.log("RESULT: " + JSON.stringify(results) + " " + "PATH: " + JSON.stringify(path)) });
 
+//gt.findSourceReporting('http://www.chronicle.com/article/A-Lawsuit-Unmet-Demands-and/236027', 0.5, 15, function (results, path) { console.log("RESULT: " + JSON.stringify(results) + " " + "PATH: " + JSON.stringify(path)) });
