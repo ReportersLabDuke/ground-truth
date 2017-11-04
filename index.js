@@ -51,12 +51,20 @@ function requestWithBodyTextAndUrlCallback(url, callback) {
     } else {
       if (typeof window === 'undefined') {
         var requestUrl = response.request.uri.href;
+        var responseContentType = response.headers['content-type'];
       } else {
         var requestUrl = response.responseURL;
+        var responseContentType = response.getResponseHeader('content-type');
       }
-      //need to choose unfluffer based on link type
-      unfluff = chooseUnfluffer(requestUrl, unfluffers);
-      callback(null, { pageHtml: unfluff(body).text, url: requestUrl });
+
+      // if the page is a pdf, we can't handle it
+      if (responseContentType.includes('text/html')) {
+        //need to choose unfluffer based on link type
+        unfluff = chooseUnfluffer(requestUrl, unfluffers);
+        callback(null, { pageHtml: unfluff(body).text, url: requestUrl });
+      } else {
+        callback(null, { pageHtml: "", url: requestUrl });
+      }
     }
   });
 }
@@ -110,12 +118,16 @@ function checkSameDomain(hostnameA, hostnameB) {
   * @param {function} callback - a callback which is past a list of page links and the request uri 
   */
 function extractLinks(response, body, callback) {
-  data = unfluff(body);
   if (typeof window === 'undefined') {
-    callback(null, data.links, response.request.uri.href);
+    var requestUrl = response.request.uri.href;
   } else {
-    callback(null, data.links, response.responseURL);
+    var requestUrl = response.responseURL;
   }
+
+  unfluff = chooseUnfluffer(requestUrl, unfluffers);
+  data = unfluff(body);
+
+  callback(null, data.links, requestUrl);
 }
 
 /** Removes links from a list that are in the same domain as originalUrl and passes the filtered list to a callback

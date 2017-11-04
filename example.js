@@ -12,3 +12,7 @@ gt.findSourceReporting('http://www.dukechronicle.com/article/2017/01/report-duke
 //gt.findSourceReporting('https://www.nytimes.com/2015/03/04/sports/ncaabasketball/duke-reacts-to-report-on-handling-of-sexual-assault-allegations.html', 0.5, 15, function (results, path) { console.log("RESULT: " + JSON.stringify(results) + " " + "PATH: " + JSON.stringify(path)) });
 
 //gt.findSourceReporting('http://www.chronicle.com/article/A-Lawsuit-Unmet-Demands-and/236027', 0.5, 15, function (results, path) { console.log("RESULT: " + JSON.stringify(results) + " " + "PATH: " + JSON.stringify(path)) });
+
+//gt.findSourceReporting('https://www.nytimes.com/2017/11/01/education/edlife/what-college-admissions-wants.html', 0.5, 15, function (results, path) { console.log("RESULT: " + JSON.stringify(results) + " " + "PATH: " + JSON.stringify(path)) });
+
+//gt.findSourceReporting('http://www.slate.com/articles/technology/technology/2017/10/vcs_who_lost_their_jobs_for_alleged_sexual_harassment_are_joking_about_it.html', 0.5, 15, function (results, path) { console.log("RESULT: " + JSON.stringify(results) + " " + "PATH: " + JSON.stringify(path)) });
